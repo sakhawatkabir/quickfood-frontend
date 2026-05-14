@@ -32,7 +32,6 @@ export async function POST(request) {
       );
     }
 
-    // Fetch all menu items in one query
     const menuItemIds = items.map((i) => i.menu_item_id);
     const menuItems = await prisma.menuItem.findMany({
       where: { id: { in: menuItemIds }, restaurantId: restaurant_id },
