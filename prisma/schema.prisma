@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  user
+  restaurant_owner
+}
+
+enum OrderStatus {
+  pending
+  preparing
+  out_for_delivery
+  delivered
+  cancelled
+}
+
+// ─────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  password     String
+  role         Role     @default(user)
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
+  phoneNumber  String?  @map("phone_number")
+  address      String?
+  profileImage String?  @map("profile_image")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  restaurants Restaurant[]
+  orders      Order[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// Restaurant
+// ─────────────────────────────────────────────
+
+model Restaurant {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  location    String?
+  image       String?
+  hours       String?
+  contact     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Owner relation
+  ownerId Int  @map("owner_id")
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  menuItems MenuItem[]
+  orders    Order[]
+
+  @@map("restaurants")
+}
+
+// ─────────────────────────────────────────────
+// MenuItem
+// ─────────────────────────────────────────────
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  image       String?
+  isAvailable Boolean  @default(true) @map("is_available")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Restaurant relation
+  restaurantId Int        @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Relations
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+// ─────────────────────────────────────────────
+// Order
+// ─────────────────────────────────────────────
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  status          OrderStatus @default(pending)
+  deliveryAddress String      @map("delivery_address")
+  totalCost       Decimal     @map("total_cost") @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Customer relation
+  customerId Int  @map("customer_id")
+  customer   User @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  restaurantId Int        @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  // Relations
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+// ─────────────────────────────────────────────
+// OrderItem 
+// ─────────────────────────────────────────────
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  quantity   Int
+  price      Decimal @db.Decimal(10, 2) // snapshot of price at time of order
+  totalPrice Decimal @map("total_price") @db.Decimal(10, 2)
+
+  // Order relation
+  orderId Int   @map("order_id")
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // MenuItem relation
+  menuItemId Int      @map("menu_item_id")
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@map("order_items")
+}
