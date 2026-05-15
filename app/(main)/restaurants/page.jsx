@@ -1,46 +1,31 @@
 "use client";
 
 import RestaurantList from "@/components/RestaurantList";
-import React, { useEffect, useState } from "react";
+import { fetchRestaurants } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
 
 const RestaurantPage = () => {
-  const [restaurants, setRestaurants] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: restaurants = [], isLoading, error } = useQuery({
+    queryKey: ["restaurants"],
+    queryFn: fetchRestaurants,
+  });
 
-  const fetchRestaurantData = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/restaurants/`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch restaurants");
-      }
-
-      const data = await res.json();
-      setRestaurants(data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRestaurantData();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
           <p className="text-xl">Loading restaurants...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <p className="text-xl text-red-500">{error.message}</p>
         </div>
       </div>
     );
