@@ -1,5 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { fetchUserOrders, updateOrderStatus } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Clock,
   CheckCircle,
@@ -8,120 +10,72 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+const statusOptions = [
+  { value: "all", label: "All Orders" },
+  { value: "pending", label: "Pending" },
+  { value: "preparing", label: "Preparing" },
+  { value: "out_for_delivery", label: "Out for Delivery" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+const statusIcons = {
+  pending: <Clock className="h-4 w-4 text-yellow-500" />,
+  preparing: <RefreshCw className="h-4 w-4 text-blue-500" />,
+  out_for_delivery: <TruckIcon className="h-4 w-4 text-purple-500" />,
+  delivered: <CheckCircle className="h-4 w-4 text-green-500" />,
+  cancelled: <XCircle className="h-4 w-4 text-red-500" />,
+};
+
+const statusColors = {
+  pending: "bg-yellow-100 text-yellow-800",
+  preparing: "bg-blue-100 text-blue-800",
+  out_for_delivery: "bg-purple-100 text-purple-800",
+  delivered: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
+};
+
 const OrdersPage = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const queryClient = useQueryClient();
 
-  const statusOptions = [
-    { value: "all", label: "All Orders" },
-    { value: "pending", label: "Pending" },
-    { value: "preparing", label: "Preparing" },
-    { value: "out_for_delivery", label: "Out for Delivery" },
-    { value: "delivered", label: "Delivered" },
-    { value: "cancelled", label: "Cancelled" },
-  ];
+  const {
+    data: orders = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["user-orders"],
+    queryFn: fetchUserOrders,
+  });
 
-  const statusIcons = {
-    pending: <Clock className="h-5 w-5 text-yellow-500" />,
-    preparing: <RefreshCw className="h-5 w-5 text-blue-500" />,
-    out_for_delivery: <TruckIcon className="h-5 w-5 text-purple-500" />,
-    delivered: <CheckCircle className="h-5 w-5 text-green-500" />,
-    cancelled: <XCircle className="h-5 w-5 text-red-500" />,
-  };
-
-  const statusColors = {
-    pending: "bg-yellow-100 text-yellow-800",
-    preparing: "bg-blue-100 text-blue-800",
-    out_for_delivery: "bg-purple-100 text-purple-800",
-    delivered: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/user-orders/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch orders");
-      }
-
-      const data = await response.json();
-      setOrders(data);
-      setLoading(false);
-    } catch (error) {
-      console.error("API Error:", error);
-      setError(error.message);
-      setLoading(false);
-    }
-  };
-
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/update-order-status/${orderId}/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: newStatus,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to update order status");
-      }
-      fetchOrders();
-    } catch (error) {
-      console.error("API Error:", error);
-      setError(error.message);
-    }
-  };
+  const { mutate: changeStatus } = useMutation({
+    mutationFn: updateOrderStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-orders"] });
+    },
+  });
 
   const filteredOrders =
     statusFilter === "all"
       ? orders
-      : orders.filter((order) => order.status === statusFilter);
+      : orders.filter((o) => o.status === statusFilter);
 
-  if (loading) {
-    return <div className="text-center py-10">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500 text-center py-10">{error}</div>;
-  }
+  if (isLoading) return <div className="text-center py-10">Loading...</div>;
+  if (error)
+    return (
+      <div className="text-red-500 text-center py-10">{error.message}</div>
+    );
 
   return (
     <div className="container mx-auto px-4">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4">Orders</h1>
-
         <div className="flex flex-wrap gap-2 mb-6">
           {statusOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => setStatusFilter(option.value)}
-              className={`px-4 py-2 rounded-md ${
+              className={`px-4 py-2 rounded-md text-sm ${
                 statusFilter === option.value
                   ? "bg-black text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -148,23 +102,23 @@ const OrdersPage = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h2 className="text-lg font-semibold">Order #{order.id}</h2>
+                    {order.customer && (
+                      <p className="text-gray-500 text-sm mt-0.5">
+                        Customer: {order.customer.username}
+                      </p>
+                    )}
                     <p className="text-gray-600 text-sm mt-1">
-                      Delivery Address: {order.delivery_address}
+                      {order.delivery_address}
                     </p>
                   </div>
-                  <div className="flex items-center">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                        statusColors[order.status] ||
-                        "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {statusIcons[order.status]}
-                      <span className="ml-1 capitalize">
-                        {order.status.replace("_", " ")}
-                      </span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[order.status] ?? "bg-gray-100 text-gray-800"}`}
+                  >
+                    {statusIcons[order.status]}
+                    <span className="capitalize">
+                      {order.status.replace(/_/g, " ")}
                     </span>
-                  </div>
+                  </span>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
@@ -196,11 +150,11 @@ const OrdersPage = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-4 mt-4">
-                  <div className="flex justify-between">
-                    <span className="font-semibold">Total</span>
-                    <span className="font-semibold">${order.total_cost}</span>
-                  </div>
+                <div className="border-t border-gray-200 pt-4 mt-4 flex justify-between">
+                  <span className="font-semibold">Total</span>
+                  <span className="font-semibold">
+                    ${parseFloat(order.total_cost).toFixed(2)}
+                  </span>
                 </div>
 
                 {order.status !== "delivered" &&
@@ -213,7 +167,10 @@ const OrdersPage = () => {
                         {order.status === "pending" && (
                           <button
                             onClick={() =>
-                              updateOrderStatus(order.id, "preparing")
+                              changeStatus({
+                                id: order.id,
+                                status: "preparing",
+                              })
                             }
                             className="px-3 py-1.5 bg-blue-100 text-blue-700 text-sm rounded-md hover:bg-blue-200"
                           >
@@ -223,7 +180,10 @@ const OrdersPage = () => {
                         {order.status === "preparing" && (
                           <button
                             onClick={() =>
-                              updateOrderStatus(order.id, "out_for_delivery")
+                              changeStatus({
+                                id: order.id,
+                                status: "out_for_delivery",
+                              })
                             }
                             className="px-3 py-1.5 bg-purple-100 text-purple-700 text-sm rounded-md hover:bg-purple-200"
                           >
@@ -233,23 +193,24 @@ const OrdersPage = () => {
                         {order.status === "out_for_delivery" && (
                           <button
                             onClick={() =>
-                              updateOrderStatus(order.id, "delivered")
+                              changeStatus({
+                                id: order.id,
+                                status: "delivered",
+                              })
                             }
                             className="px-3 py-1.5 bg-green-100 text-green-700 text-sm rounded-md hover:bg-green-200"
                           >
                             Mark as Delivered
                           </button>
                         )}
-                        {order.status !== "cancelled" && (
-                          <button
-                            onClick={() =>
-                              updateOrderStatus(order.id, "cancelled")
-                            }
-                            className="px-3 py-1.5 bg-red-100 text-red-700 text-sm rounded-md hover:bg-red-200"
-                          >
-                            Cancel Order
-                          </button>
-                        )}
+                        <button
+                          onClick={() =>
+                            changeStatus({ id: order.id, status: "cancelled" })
+                          }
+                          className="px-3 py-1.5 bg-red-100 text-red-700 text-sm rounded-md hover:bg-red-200"
+                        >
+                          Cancel Order
+                        </button>
                       </div>
                     </div>
                   )}
