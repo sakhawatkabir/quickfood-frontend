@@ -1,51 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { useAuth } from "@/app/context/AuthContext";
+import { fetchRestaurant } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { AlignLeft, ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 
 const RestaurantDetailPage = () => {
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
-  const [restaurant, setRestaurant] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const fetchRestaurantDetails = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/restaurant/${params.id}/`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  const {
+    data: restaurant,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["restaurant", params.id],
+    queryFn: () => fetchRestaurant(params.id),
+    enabled: !!params.id,
+  });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch restaurant details");
-      }
-
-      const data = await res.json();
-      setRestaurant(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (params.id) {
-      fetchRestaurantDetails();
-    }
-  }, [params.id, token]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
@@ -55,11 +31,13 @@ const RestaurantDetailPage = () => {
     );
   }
 
-  if (!restaurant) {
+  if (error || !restaurant) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col justify-center items-center h-64">
-          <p className="text-xl text-gray-600 mb-4">Restaurant not found</p>
+          <p className="text-xl text-gray-600 mb-4">
+            {error?.message || "Restaurant not found"}
+          </p>
           <button
             onClick={() => router.push("/restaurants")}
             className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
@@ -101,7 +79,7 @@ const RestaurantDetailPage = () => {
         <div className="p-6">
           <h1 className="text-3xl font-bold mb-4">{restaurant.name}</h1>
 
-          <div className="flex items-center text-gray-500 mb-6">
+          <div className="flex items-center gap-1 text-gray-500 mb-6">
             <MapPin className="h-5 w-5" />
             <span>{restaurant.location}</span>
           </div>
@@ -128,7 +106,7 @@ const RestaurantDetailPage = () => {
           <div className="mt-8 flex justify-center">
             <Link
               href={`/restaurants/${params.id}/menu-items`}
-              className="inline-block bg-black text-white py-2 px-6 rounded-md"
+              className="inline-block bg-black text-white py-2 px-6 rounded-md hover:bg-gray-800"
             >
               View Menu Items
             </Link>
