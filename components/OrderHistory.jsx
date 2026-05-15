@@ -1,45 +1,44 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { ArrowRight, MapPin, TruckIcon } from "lucide-react";
+import { fetchMyOrders } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { MapPin } from "lucide-react";
+
+const formatCurrency = (amount) => `$${parseFloat(amount).toFixed(2)}`;
+
+const statusStyles = {
+  pending: "bg-gray-200 text-gray-800",
+  preparing: "bg-yellow-200 text-yellow-800",
+  out_for_delivery: "bg-blue-200 text-blue-800",
+  delivered: "bg-green-200 text-green-800",
+  cancelled: "bg-red-200 text-red-800",
+};
 
 const OrderHistory = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["my-orders"],
+    queryFn: fetchMyOrders,
+  });
 
-  const formatCurrency = (amount) => {
-    return `$${parseFloat(amount).toFixed(2)}`;
-  };
+  const orders = data?.orders ?? [];
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/my-orders/`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-          }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to fetch orders");
-        }
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">Loading orders...</p>
+      </div>
+    );
+  }
 
-        const data = await res.json();
-        setOrders(data.orders);
-        setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, []);
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">{error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -49,11 +48,7 @@ const OrderHistory = () => {
         </h2>
       </div>
 
-      {loading ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      ) : orders.length > 0 ? (
+      {orders.length > 0 ? (
         <div className="px-4 py-4">
           <div className="grid gap-4">
             {orders.map((order) => (
@@ -63,31 +58,21 @@ const OrderHistory = () => {
                     <span className="text-gray-500 text-sm">Order ID:</span>
                     <span className="font-medium ml-1">#{order.id}</span>
                   </div>
-                  <div
+                  <span
                     className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      order.status === "pending"
-                        ? "bg-gray-200 text-gray-800"
-                        : order.status === "preparing"
-                        ? "bg-yellow-200 text-yellow-800"
-                        : order.status === "out_for_delivery"
-                        ? "bg-blue-200 text-blue-800"
-                        : order.status === "delivered"
-                        ? "bg-green-200 text-green-800"
-                        : order.status === "cancelled"
-                        ? "bg-red-200 text-red-800"
-                        : ""
+                      statusStyles[order.status] ?? "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {order.status}
-                  </div>
+                    {order.status.replace(/_/g, " ")}
+                  </span>
                 </div>
 
                 <div className="p-4">
                   <div className="flex items-start mb-4">
                     <MapPin className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div className="ml-2 text-sm text-gray-600 flex-1">
+                    <p className="ml-2 text-sm text-gray-600">
                       {order.delivery_address || "No delivery address provided"}
-                    </div>
+                    </p>
                   </div>
 
                   <div className="border-t border-gray-100 pt-3 mt-3">
@@ -99,7 +84,7 @@ const OrderHistory = () => {
                           className="flex justify-between text-sm"
                         >
                           <span className="text-gray-700">
-                            {item.quantity}x {item.name || item.menu_item_name}
+                            {item.quantity}x {item.name}
                           </span>
                           <span className="font-medium">
                             {formatCurrency(item.price * item.quantity)}
@@ -115,17 +100,6 @@ const OrderHistory = () => {
                       </span>
                     </div>
                   </div>
-
-                  <div className="mt-4 flex justify-end">
-                    <Link
-                      href={`/track-order/${order.id}`}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      <TruckIcon className="h-4 w-4 mr-1" />
-                      Track Order
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </div>
                 </div>
               </div>
             ))}
@@ -133,7 +107,9 @@ const OrderHistory = () => {
         </div>
       ) : (
         <div className="text-center py-8">
-          <p className="text-gray-500">You haven't placed any orders yet.</p>
+          <p className="text-gray-500">
+            You haven&apos;t placed any orders yet.
+          </p>
           <Link
             href="/menu"
             className="mt-4 inline-block px-4 py-2 bg-black text-white rounded"
