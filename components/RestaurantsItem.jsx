@@ -1,10 +1,4 @@
-import {
-  GemIcon,
-  Locate,
-  LocateFixedIcon,
-  LocateIcon,
-  MapPin,
-} from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
@@ -14,7 +8,7 @@ const RestaurantsItem = ({ item }) => {
       <div className="h-48 bg-gray-200 relative">
         {item.image ? (
           <img
-            src={`${process.env.NEXT_PUBLIC_URL}${item.image}`}
+            src={`${item.image}`}
             alt={item.name}
             className="w-full h-full object-cover"
           />
