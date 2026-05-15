@@ -1,79 +1,39 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Edit, Trash2, PlusCircle, Book } from "lucide-react";
+import { fetchOwnerRestaurants, deleteRestaurant } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Edit, Trash2, PlusCircle } from "lucide-react";
 
 const RestaurantsPage = () => {
-  const [restaurants, setRestaurants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const router = useRouter();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchRestaurants();
-  }, []);
+  const {
+    data: restaurants = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["owner-restaurants"],
+    queryFn: fetchOwnerRestaurants,
+  });
 
-  const fetchRestaurants = async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/owner-restaurants/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  const { mutate: remove } = useMutation({
+    mutationFn: deleteRestaurant,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner-restaurants"] });
+    },
+  });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch restaurants");
-      }
-
-      const data = await response.json();
-      setRestaurants(data);
-      setLoading(false);
-    } catch (error) {
-      setError(error.message);
-      setLoading(false);
-    }
+  const handleDelete = (id) => {
+    if (!confirm("Are you sure you want to delete this restaurant?")) return;
+    remove(id);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this restaurant?")) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("access_token");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/delete-restaurant/`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete restaurant");
-      }
-
-      fetchRestaurants();
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-
-  if (loading) {
-    return <div className="text-center py-10">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500 text-center py-10">{error}</div>;
-  }
+  if (isLoading) return <div className="text-center py-10">Loading...</div>;
+  if (error)
+    return (
+      <div className="text-red-500 text-center py-10">{error.message}</div>
+    );
 
   return (
     <div className="container mx-auto px-4">
@@ -81,7 +41,7 @@ const RestaurantsPage = () => {
         <h1 className="text-2xl font-bold">My Restaurants</h1>
         <Link
           href="/dashboard/restaurants/add"
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-md"
+          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
         >
           <PlusCircle size={18} />
           <span>Add Restaurant</span>
@@ -90,14 +50,14 @@ const RestaurantsPage = () => {
 
       {restaurants.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-6 text-center">
-          <p className="text-gray-500 mb-4">No restaurants found</p>
+          <p className="text-gray-500">No restaurants found</p>
         </div>
       ) : (
         <div className="w-full space-y-5">
           {restaurants.map((restaurant) => (
             <div
               key={restaurant.id}
-              className="bg-white rounded-lg overflow-hidden "
+              className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100"
             >
               <div className="p-6">
                 <h2 className="text-xl font-semibold mb-2">
