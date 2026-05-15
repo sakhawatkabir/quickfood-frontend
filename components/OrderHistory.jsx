@@ -4,16 +4,50 @@ import React from "react";
 import Link from "next/link";
 import { fetchMyOrders } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin } from "lucide-react";
+import {
+  MapPin,
+  Package,
+  ArrowLeft,
+  Clock,
+  Truck,
+  CheckCircle2,
+  XCircle,
+  ChefHat,
+} from "lucide-react";
 
 const formatCurrency = (amount) => `$${parseFloat(amount).toFixed(2)}`;
 
-const statusStyles = {
-  pending: "bg-gray-200 text-gray-800",
-  preparing: "bg-yellow-200 text-yellow-800",
-  out_for_delivery: "bg-blue-200 text-blue-800",
-  delivered: "bg-green-200 text-green-800",
-  cancelled: "bg-red-200 text-red-800",
+const statusConfig = {
+  pending: {
+    icon: Clock,
+    bg: "bg-gray-100",
+    text: "text-gray-600",
+    dot: "bg-gray-400",
+  },
+  preparing: {
+    icon: ChefHat,
+    bg: "bg-yellow-50",
+    text: "text-yellow-700",
+    dot: "bg-yellow-400",
+  },
+  out_for_delivery: {
+    icon: Truck,
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    dot: "bg-blue-400",
+  },
+  delivered: {
+    icon: CheckCircle2,
+    bg: "bg-green-50",
+    text: "text-green-700",
+    dot: "bg-green-400",
+  },
+  cancelled: {
+    icon: XCircle,
+    bg: "bg-red-50",
+    text: "text-red-700",
+    dot: "bg-red-400",
+  },
 };
 
 const OrderHistory = () => {
@@ -26,96 +60,113 @@ const OrderHistory = () => {
 
   if (isLoading) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Loading orders...</p>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900">Order History</h2>
+        </div>
+        <div className="p-5 space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="h-32 bg-gray-100 rounded-xl animate-pulse"
+            />
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500">{error.message}</p>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <p className="text-red-500 text-center">{error.message}</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="border-b border-gray-400 py-3">
-        <h2 className="text-xl font-semibold text-black text-center">
-          Order History
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="p-5 border-b border-gray-100">
+        <h2 className="font-semibold text-gray-900">
+          Order History ({orders.length})
         </h2>
       </div>
 
-      {orders.length > 0 ? (
-        <div className="px-4 py-4">
-          <div className="grid gap-4">
-            {orders.map((order) => (
-              <div key={order.id} className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
-                  <div>
-                    <span className="text-gray-500 text-sm">Order ID:</span>
-                    <span className="font-medium ml-1">#{order.id}</span>
+      {orders.length === 0 ? (
+        <div className="p-8 text-center">
+          <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 mb-1">No orders yet</p>
+          <p className="text-sm text-gray-400 mb-4">
+            Place your first order to see it here
+          </p>
+          <Link
+            href="/menu"
+            className="inline-flex items-center gap-1.5 text-sm text-orange-500 hover:text-orange-600 font-medium"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Browse Menu
+          </Link>
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-100">
+          {orders.map((order) => {
+            const status = statusConfig[order.status] || statusConfig.pending;
+            const StatusIcon = status.icon;
+
+            return (
+              <div key={order.id} className="p-5">
+                {/* Order header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">Order</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      #{order.id}
+                    </span>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      statusStyles[order.status] ?? "bg-gray-100 text-gray-800"
-                    }`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}
                   >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${status.dot}`}
+                    />
                     {order.status.replace(/_/g, " ")}
                   </span>
                 </div>
 
-                <div className="p-4">
-                  <div className="flex items-start mb-4">
-                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <p className="ml-2 text-sm text-gray-600">
-                      {order.delivery_address || "No delivery address provided"}
-                    </p>
-                  </div>
+                {/* Delivery address */}
+                <div className="flex items-start gap-2 mb-3">
+                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-gray-500">
+                    {order.delivery_address || "No delivery address provided"}
+                  </p>
+                </div>
 
-                  <div className="border-t border-gray-100 pt-3 mt-3">
-                    <h4 className="font-medium text-sm mb-2">Order Items</h4>
-                    <ul className="space-y-2">
-                      {order.items.map((item, index) => (
-                        <li
-                          key={index}
-                          className="flex justify-between text-sm"
-                        >
-                          <span className="text-gray-700">
-                            {item.quantity}x {item.name}
-                          </span>
-                          <span className="font-medium">
-                            {formatCurrency(item.price * item.quantity)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                {/* Items */}
+                <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                  <ul className="space-y-1.5">
+                    {order.items.map((item, index) => (
+                      <li key={index} className="flex justify-between text-sm">
+                        <span className="text-gray-600">
+                          {item.quantity}x {item.name}
+                        </span>
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(item.price * item.quantity)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-                    <div className="flex justify-between mt-4 pt-3 border-t border-gray-100">
-                      <span className="font-medium">Total:</span>
-                      <span className="font-bold">
-                        {formatCurrency(order.total_cost)}
-                      </span>
-                    </div>
-                  </div>
+                {/* Total */}
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Total</span>
+                  <span className="font-bold text-gray-900">
+                    {formatCurrency(order.total_cost)}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-500">
-            You haven&apos;t placed any orders yet.
-          </p>
-          <Link
-            href="/menu"
-            className="mt-4 inline-block px-4 py-2 bg-black text-white rounded"
-          >
-            Browse Menu
-          </Link>
+            );
+          })}
         </div>
       )}
     </div>
