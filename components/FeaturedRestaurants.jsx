@@ -1,42 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { fetchRestaurants } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 import RestaurantsItem from "./RestaurantsItem";
 
 const FeaturedRestaurants = () => {
-  const [restaurants, setRestaurants] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: allRestaurants = [], isLoading } = useQuery({
+    queryKey: ["restaurants"],
+    queryFn: fetchRestaurants,
+  });
 
-  const fetchRestaurantsData = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/restaurants/`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = await res.json();
+  const restaurants = allRestaurants.slice(0, 6);
 
-      console.log(data);
-      
-
-      setRestaurants(data.slice(0, 6));
-    } catch (error) {
-      console.error("Error fetching restaurants:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRestaurantsData();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="py-8">
         <div className="flex justify-center items-center h-64">
@@ -46,9 +23,7 @@ const FeaturedRestaurants = () => {
     );
   }
 
-  if (restaurants.length === 0) {
-    return null;
-  }
+  if (restaurants.length === 0) return null;
 
   return (
     <div className="py-12 bg-gray-50">
