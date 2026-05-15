@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { useAuth } from "@/app/context/AuthContext";
+import { fetchRestaurant } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import MenuItem from "@/components/MenuItem";
 import { ArrowLeft } from "lucide-react";
@@ -10,51 +11,20 @@ import { ArrowLeft } from "lucide-react";
 const RestaurantMenuItemsPage = () => {
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
-  const [restaurant, setRestaurant] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const fetchRestaurantData = async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/restaurant/${params.id}/`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  const {
+    data: restaurant,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["restaurant", params.id],
+    queryFn: () => fetchRestaurant(params.id),
+    enabled: !!params.id,
+  });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch restaurant data");
-      }
+  const menuItems = restaurant?.menus ?? [];
 
-      const data = await response.json();
-      setRestaurant(data);
-
-      if (data) {
-        setMenuItems(data.menus);
-      } else {
-        setMenuItems([]);
-      }
-    } catch (err) {
-      console.error("Error fetching restaurant data:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (params.id) {
-      fetchRestaurantData();
-    }
-  }, [params.id, token]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
@@ -64,11 +34,13 @@ const RestaurantMenuItemsPage = () => {
     );
   }
 
-  if (!restaurant) {
+  if (error || !restaurant) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col justify-center items-center h-64">
-          <p className="text-xl text-gray-600 mb-4">Restaurant not found</p>
+          <p className="text-xl text-gray-600 mb-4">
+            {error?.message || "Restaurant not found"}
+          </p>
           <button
             onClick={() => router.push("/restaurants")}
             className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
@@ -93,7 +65,7 @@ const RestaurantMenuItemsPage = () => {
       </div>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">{restaurant.name} - Menu</h1>
+        <h1 className="text-3xl font-bold">{restaurant.name} — Menu</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -102,7 +74,7 @@ const RestaurantMenuItemsPage = () => {
         ) : (
           <div className="col-span-2 text-center py-12">
             <p className="text-xl text-gray-500">
-              No menu items available for this restaurant
+              No menu items available for this restaurant.
             </p>
           </div>
         )}
