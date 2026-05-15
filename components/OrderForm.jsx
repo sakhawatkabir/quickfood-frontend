@@ -1,67 +1,41 @@
 "use client";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
+import { createOrder } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 const OrderForm = () => {
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const router = useRouter();
-
-  const { isAuthenticated, token } = useAuth();
-
+  const { isAuthenticated } = useAuth();
   const { cartItems, clearCart } = useCart();
+  const queryClient = useQueryClient();
 
-  const handlePlaceOrder = async (e) => {
+  const { mutate, isPending, error, isSuccess } = useMutation({
+    mutationFn: createOrder,
+    onSuccess: () => {
+      clearCart();
+      queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+      router.push("/profile");
+    },
+  });
+
+  const handlePlaceOrder = (e) => {
     e.preventDefault();
-
     if (!isAuthenticated) {
       router.push("/login");
+      return;
     }
-
-    if (!deliveryAddress.trim()) {
-      return setError("Please enter a delivery address");
-    }
-
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/create-order/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            restaurant_id: cartItems[0].restaurant_id,
-            items: cartItems.map((item) => ({
-              menu_item_id: item.menu_item_id,
-              quantity: item.quantity,
-            })),
-            delivery_address: deliveryAddress,
-          }),
-        }
-      );
-
-      const data = await res.json()
-
-      console.log(data);
-      
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to place order");
-      }
-
-      clearCart();
-
-      setSuccess("Order placed successfully!");
-
-      router.push(`/profile`);
-    } catch (error) {
-      setError(error.message);
-    }
+    mutate({
+      restaurant_id: cartItems[0].restaurant_id,
+      items: cartItems.map((item) => ({
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+      })),
+      delivery_address: deliveryAddress,
+    });
   };
 
   return (
@@ -74,20 +48,25 @@ const OrderForm = () => {
       </label>
       <textarea
         id="delivery-address"
-        type="text"
         value={deliveryAddress}
         onChange={(e) => setDeliveryAddress(e.target.value)}
         className="outline-none w-full px-3 py-2 border border-gray-300 rounded-md sm:text-sm"
         placeholder="Enter your delivery address"
         rows={3}
+        required
       />
-      {error && <p className="text-red-500">{error}</p>}
-      {success && <p className="text-green-500">{success}</p>}
+
+      {error && <p className="text-red-500 text-sm">{error.message}</p>}
+      {isSuccess && (
+        <p className="text-green-500 text-sm">Order placed! Redirecting...</p>
+      )}
+
       <button
         type="submit"
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black"
+        disabled={isPending}
+        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black disabled:opacity-60"
       >
-        Place Order
+        {isPending ? "Placing order..." : "Place Order"}
       </button>
     </form>
   );
