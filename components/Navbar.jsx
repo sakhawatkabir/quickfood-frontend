@@ -254,6 +254,15 @@ const Navbar = () => {
                     Dashboard
                   </Link>
                 )}
+                {userRole === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-1.5 text-sm text-zinc-600 hover:text-orange-500 transition-colors"
+                  >
+                    <LayoutDashboard className="size-4" />
+                    Admin
+                  </Link>
+                )}
                 <Link
                   href="/profile"
                   className="flex items-center gap-1.5 text-sm text-zinc-600 hover:text-orange-500 transition-colors"
@@ -453,6 +462,16 @@ const Navbar = () => {
                     >
                       <LayoutDashboard className="size-4" />
                       Dashboard
+                    </Link>
+                  )}
+                  {userRole === "admin" && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 py-2 text-zinc-700 hover:text-orange-500 font-medium"
+                    >
+                      <LayoutDashboard className="size-4" />
+                      Admin
                     </Link>
                   )}
                   <Link

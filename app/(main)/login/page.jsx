@@ -21,10 +21,12 @@ const LoginPage = () => {
       localStorage.setItem("user_role", data.user.role);
       Cookies.set("token", data.tokens.access, { expires: 7 });
       setIsAuthenticated(true);
-      if (data.user.role === "user") {
-        router.push("/profile");
+      if (data.user.role === "admin") {
+        router.push("/admin");
       } else if (data.user.role === "restaurant_owner") {
         router.push("/dashboard/restaurants");
+      } else {
+        router.push("/profile");
       }
     },
   });
