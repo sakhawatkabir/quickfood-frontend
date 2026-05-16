@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import {
+  LayoutDashboard,
   ShoppingBag,
   Menu as MenuIcon,
   PlusCircle,
@@ -23,6 +24,7 @@ export default function Sidebar({ onClose }) {
   const isActive = (path) => pathname === path;
 
   const navigation = [
+    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Restaurants", href: "/dashboard/restaurants", icon: Store },
     { name: "Menu Items", href: "/dashboard/menu-items", icon: MenuIcon },
     {
@@ -44,7 +46,10 @@ export default function Sidebar({ onClose }) {
     <div className="w-full h-full flex flex-col bg-card border-r">
       {/* Header */}
       <div className="flex items-center justify-between h-16 px-5 border-b">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
+        <Link
+          href="/"
+          className="flex items-center gap-2 font-semibold text-lg"
+        >
           <UtensilsCrossed className="size-5 text-primary" />
           <span>QuickFood</span>
         </Link>
