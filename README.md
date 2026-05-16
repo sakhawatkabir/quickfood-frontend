@@ -1,92 +1,131 @@
-# QuickFood - Restaurant Management System
+# QuickFood
 
-QuickFood is a comprehensive restaurant management platform built with Next.js that helps restaurant owners manage their menus, track orders, and provide online food ordering services to customers.
+A full-stack food delivery platform built with Next.js, featuring restaurant management, menu ordering, real-time order tracking, and an admin dashboard with analytics.
 
 ## Features
 
-### For Restaurant Owners
+### Customer
+- Browse restaurants and menus
+- Add items to cart and place orders
+- Order tracking with status updates
+- User profile management
+- Search restaurants and menu items
 
-- **Dashboard Overview**: Get a quick snapshot of your business with key metrics and recent activities
-- **Restaurant Management**: Add, edit, and manage restaurant locations
-- **Menu Management**: Create and organize menu items with descriptions, prices, and images
-- **Order Tracking**: Monitor incoming orders and update order statuses
-- **Customer Management**: View customer profiles and order history
+### Restaurant Owner
+- Dashboard with revenue and order analytics (Recharts)
+- Manage restaurants (create, edit, delete)
+- Manage menu items with image uploads (Cloudinary)
+- View and update order status
 
-### For Customers
-
-- **Restaurant Discovery**: Browse through available restaurants
-- **Menu Browsing**: View restaurant menus with images and detailed descriptions
-- **Online Ordering**: Place food orders online with ease
-- **User Profiles**: Create accounts to save preferences and view order history
+### Admin
+- Overview dashboard with stats, charts, and recent activity
+- User management with role assignment
+- Order management with status updates and item details
+- Restaurant and menu item management
+- Revenue and order analytics
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React 18, TailwindCSS
-- **State Management**: React Context API
-- **UI Components**: Custom components with Tailwind styling
-- **Icons**: Lucide React
-- **Authentication**: JWT with HTTP-only cookies
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 14 (App Router) |
+| UI | shadcn/ui, Tailwind CSS, Lucide Icons |
+| Charts | Recharts |
+| State | TanStack React Query v5 |
+| Database | PostgreSQL |
+| ORM | Prisma |
+| Auth | JWT (jose) |
+| Images | Cloudinary |
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18.x or higher
-- npm or yarn
-- Backend API service running (see API setup below)
+- Node.js 18+
+- PostgreSQL database
+- Cloudinary account (for image uploads)
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/sakayat/quickfood-frontend.git
-   cd quickfood-frontend
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/sakhawatkabir/quickfood.git
+cd quickfood
 
-2. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+# Install dependencies
+pnpm install
 
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with the following variables:
-   ```
-   NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
-   NEXT_PUBLIC_URL=http://127.0.0.1:8000
-   ```
+# Set up environment variables
+cp .env.example .env
+```
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+### Environment Variables
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/quickfood"
+JWT_SECRET="your-secret-key"
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
+```
 
+### Database Setup
+
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+### Development
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+```
+app/
+├── admin/              # Admin dashboard
+│   ├── users/          # User management
+│   ├── orders/         # Order management
+│   ├── restaurants/    # Restaurant management
+│   └── menu-items/     # Menu item management
+├── api/                # API routes
+│   ├── admin/          # Admin endpoints
+│   ├── users/          # Auth & profile
+│   └── ...
+├── dashboard/          # Restaurant owner dashboard
+│   ├── restaurants/    # Restaurant CRUD
+│   ├── menu-items/     # Menu item CRUD
+│   └── orders/         # Order management
+├── (public)/           # Public pages
+│   ├── restaurants/    # Browse restaurants
+│   ├── menu-items/     # Browse menu
+│   └── cart/           # Shopping cart
+components/
+├── ui/                 # shadcn/ui components
+lib/
+├── api.js              # Client-side API functions
+├── auth.js             # Auth middleware
+├── prisma.js           # Prisma client
+└── utils.js            # Utility functions
+prisma/
+└── schema.prisma       # Database schema
+```
 
 ## Deployment
 
-This Next.js application can be deployed to Vercel or any other hosting service that supports Next.js applications.
-
 ```bash
 # Build for production
-npm run build
-# or
-yarn build
+pnpm build
 
 # Start production server
-npm run start
-# or
-yarn start
+pnpm start
 ```
 
-## API Backend
-
-This frontend application requires a backend API service. The backend provides:
-- User authentication and authorization
-- Restaurant and menu CRUD operations
-- Order processing and management
-- Image storage
+This application can be deployed to Vercel or any hosting service that supports Next.js.
