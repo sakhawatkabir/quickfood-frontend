@@ -3,9 +3,17 @@ import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCart } from "@/app/context/CartContext";
 import { fetchMenuItems, fetchRestaurants } from "@/lib/api";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   ShoppingCart,
   Menu,
@@ -16,6 +24,7 @@ import {
   Search,
   MapPin,
   UtensilsCrossed,
+  ChevronDown,
 } from "lucide-react";
 
 const Navbar = () => {
@@ -26,11 +35,21 @@ const Navbar = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [menuItems, setMenuItems] = useState([]);
-  const [restaurants, setRestaurants] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
+
+  const { data: menuItems = [] } = useQuery({
+    queryKey: ["menu-items"],
+    queryFn: fetchMenuItems,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: restaurants = [] } = useQuery({
+    queryKey: ["restaurants"],
+    queryFn: fetchRestaurants,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const countItem = cartItems.reduce((total, item) => total + item.quantity, 0);
 
@@ -41,16 +60,6 @@ const Navbar = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // Fetch data on mount
-  useEffect(() => {
-    fetchMenuItems()
-      .then(setMenuItems)
-      .catch(() => {});
-    fetchRestaurants()
-      .then(setRestaurants)
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -244,40 +253,55 @@ const Navbar = () => {
             </Link>
 
             {isAuthenticated ? (
-              <>
-                {userRole === "restaurant_owner" && (
-                  <Link
-                    href="/dashboard/restaurants"
-                    className="flex items-center gap-1.5 text-sm text-zinc-600 hover:text-orange-500 transition-colors"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 text-sm text-zinc-600 hover:text-orange-500 transition-colors px-3 py-2 rounded-lg hover:bg-zinc-50">
+                    <User className="size-4" />
+                    <ChevronDown className="size-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {userRole === "restaurant_owner" && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard/restaurants"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <LayoutDashboard className="size-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {userRole === "admin" && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <LayoutDashboard className="size-4" />
+                        Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/profile"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <User className="size-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-red-600 focus:text-red-600 cursor-pointer"
                   >
-                    <LayoutDashboard className="size-4" />
-                    Dashboard
-                  </Link>
-                )}
-                {userRole === "admin" && (
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-1.5 text-sm text-zinc-600 hover:text-orange-500 transition-colors"
-                  >
-                    <LayoutDashboard className="size-4" />
-                    Admin
-                  </Link>
-                )}
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-1.5 text-sm text-zinc-600 hover:text-orange-500 transition-colors"
-                >
-                  <User className="size-4" />
-                  Profile
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 text-sm px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg hover:bg-zinc-200 transition-colors font-medium"
-                >
-                  <LogOut className="size-4" />
-                  Logout
-                </button>
-              </>
+                    <LogOut className="size-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link
                 href="/login"
