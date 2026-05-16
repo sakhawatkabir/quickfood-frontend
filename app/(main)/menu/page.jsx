@@ -19,6 +19,7 @@ const MenuPage = () => {
   } = useQuery({
     queryKey: ["menu-items"],
     queryFn: fetchMenuItems,
+    staleTime: 0,
   });
 
   const filtered = menuItems.filter((item) => {

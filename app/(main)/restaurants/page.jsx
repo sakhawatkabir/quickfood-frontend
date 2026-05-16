@@ -15,6 +15,7 @@ const RestaurantPage = () => {
   } = useQuery({
     queryKey: ["restaurants"],
     queryFn: fetchRestaurants,
+    staleTime: 0,
   });
 
   const filtered = restaurants.filter(

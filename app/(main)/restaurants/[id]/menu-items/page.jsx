@@ -19,6 +19,7 @@ const RestaurantMenuItemsPage = () => {
     queryKey: ["restaurant", params.id],
     queryFn: () => fetchRestaurant(params.id),
     enabled: !!params.id,
+    staleTime: 0,
   });
 
   const menuItems = restaurant?.menus ?? [];
