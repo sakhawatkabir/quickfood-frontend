@@ -2,6 +2,7 @@
 
 import { useCart } from "@/app/context/CartContext";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import Image from "next/image";
 import React from "react";
 
 const Cart = ({ item }) => {
@@ -20,12 +21,13 @@ const Cart = ({ item }) => {
   return (
     <div className="flex items-center gap-4">
       {/* Image */}
-      <div className="size-20 bg-zinc-100 rounded-lg overflow-hidden flex-shrink-0">
+      <div className="relative size-20 bg-zinc-100 rounded-lg overflow-hidden flex-shrink-0">
         {item.image ? (
-          <img
+          <Image
             src={item.image}
             alt={item.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100">

@@ -1,5 +1,6 @@
 import { useCart } from "@/app/context/CartContext";
 import { ShoppingBag } from "lucide-react";
+import Image from "next/image";
 import React from "react";
 
 const MenuItem = ({ item }) => {
@@ -20,12 +21,13 @@ const MenuItem = ({ item }) => {
 
   return (
     <div className="bg-white rounded-xl overflow-hidden border border-zinc-100 shadow-sm hover:shadow-md transition-all duration-300 flex">
-      <div className="w-28 h-28 sm:w-36 sm:h-36 bg-zinc-200 flex-shrink-0">
+      <div className="relative w-28 h-28 sm:w-36 sm:h-36 bg-zinc-200 flex-shrink-0">
         {item.image ? (
-          <img
+          <Image
             src={item.image}
             alt={item.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100">

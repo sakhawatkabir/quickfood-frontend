@@ -1,4 +1,5 @@
 import { MapPin, Star } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -8,12 +9,13 @@ const RestaurantsItem = ({ item }) => {
       href={`/restaurants/${item.id}`}
       className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-zinc-100"
     >
-      <div className="h-52 bg-zinc-200 relative overflow-hidden">
+      <div className="relative h-52 bg-zinc-200 overflow-hidden">
         {item.image ? (
-          <img
+          <Image
             src={item.image}
             alt={item.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100">

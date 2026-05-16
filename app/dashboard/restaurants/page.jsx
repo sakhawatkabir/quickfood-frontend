@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { fetchOwnerRestaurants, deleteRestaurant } from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -122,12 +123,13 @@ const RestaurantsPage = () => {
                 href={`/dashboard/restaurants/edit/${restaurant.id}`}
                 className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-zinc-100"
               >
-                <div className="h-52 bg-zinc-200 relative overflow-hidden">
+                <div className="relative h-52 bg-zinc-200 overflow-hidden">
                   {restaurant.image ? (
-                    <img
+                    <Image
                       src={restaurant.image}
                       alt={restaurant.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100">

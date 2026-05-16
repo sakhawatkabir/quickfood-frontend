@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
@@ -143,10 +144,12 @@ const EditMenuItemPage = ({ params }) => {
                 Image
               </label>
               {menuItem?.image && (
-                <img
+                <Image
                   src={menuItem.image}
                   alt={name}
-                  className="w-32 h-32 object-cover rounded-lg mb-2 border"
+                  width={128}
+                  height={128}
+                  className="object-cover rounded-lg mb-2 border"
                 />
               )}
               <Input

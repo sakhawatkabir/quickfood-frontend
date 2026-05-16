@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Plus,
@@ -132,10 +133,12 @@ const MenuPage = () => {
                     <TableRow key={item.id}>
                       <TableCell>
                         {item.image ? (
-                          <img
+                          <Image
                             src={item.image}
                             alt={item.name}
-                            className="w-16 h-12 object-cover rounded-lg"
+                            width={64}
+                            height={48}
+                            className="object-cover rounded-lg"
                           />
                         ) : (
                           <div className="w-16 h-12 bg-muted rounded-lg flex items-center justify-center">

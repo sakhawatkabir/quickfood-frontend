@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { fetchRestaurant } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -102,12 +103,13 @@ const RestaurantDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="lg:col-span-2">
-            <div className="h-72 bg-zinc-200 rounded-xl overflow-hidden mb-8">
+            <div className="relative h-72 bg-zinc-200 rounded-xl overflow-hidden mb-8">
               {restaurant.image ? (
-                <img
+                <Image
                   src={restaurant.image}
                   alt={restaurant.name}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-50 to-orange-100">
